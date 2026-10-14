@@ -23,17 +23,20 @@ import { Student, Enrolment, students, courses, enrolments } from './data.js';
  * join. No for loops in this file.
  */
 export function gradeReport(studentId: string): string {
-  return enrolments.filter(enrolment  => enrolment.studentId === studentId).map(enrolment => {
-          const course = courses.find(course => enrolment.courseId === course.courseId)  
-          if (!course) {
-            return "";
-          }
-          const grade = enrolment.grade === null ? "not awarded" : enrolment.grade ;
-          return `${course.courseId} ${course.title}: ${grade}`;
-      }
-      )
-      .join("\n");
+  const mine = enrolments.filter((enrolment) => enrolment.studentId === studentId)
+  const lines = mine.map((enrolment) => {
+    const course = courses.find((oneCourse) => oneCourse.courseId === enrolment.courseId)
+    if (course === undefined) {
+      return `${enrolment.courseId} (unknown course)`;
+    }
+    const grade = enrolment.grade === null ? "not awarded" : enrolment.grade 
+    return `${enrolment.courseId} ${course.title}: ${grade}`
+    
+  })
+  .join("\n")
+  return lines;
 }
+
 
 // --- A2. Averaging --------------------------------------------------------
 
@@ -48,10 +51,11 @@ export function gradeReport(studentId: string): string {
  *     averageGrade('00128')   // 11  (12 and 10)
  */
 export function averageGrade(studentId: string): number {
-  const gradeFilter = enrolments.filter(enrolment => enrolment.studentId === studentId).filter(enrolment => enrolment.grade !== null)
-  .map(enrolment => Number(enrolment.grade))
-  if (gradeFilter.length !== 0) {
-    return gradeFilter.reduce((sum, grade) => sum+=grade) / gradeFilter.length 
+  const gradesFilter = enrolments.filter((enrolment) => enrolment.studentId === studentId).filter((enrolment) => enrolment.grade !== null).map((enrolment) => Number(enrolment.grade))
+
+  if (gradesFilter.length !== 0) {
+    const average = gradesFilter.reduce((sum, grade) => sum+=grade) / gradesFilter.length 
+    return Math.round(average * 10) / 10
   }
   return 0
 }
@@ -63,12 +67,15 @@ export function averageGrade(studentId: string): number {
  * sorted alphabetically and without repeats.
  */
 export function awaitingGrades(): string[] {
- const namesWithDuplicates = enrolments
-    .filter(enrolment => enrolment.grade === null)
-    .map(enrolment => {
-      const listStudent = students.find(student => student.id === enrolment.studentId);
-      return listStudent?.name || "Unknown";
-    });
+  const namesWithDuplicates = enrolments
+  .filter((enrolment) => enrolment.grade === null)
+  .map((enrolment) => {
+    const listStudent = students.find((oneStudent) => oneStudent.id === enrolment.studentId)
+    if (listStudent === undefined){
+      return enrolment.studentId
+    }
+    return listStudent.name
+    })
   return Array.from(new Set(namesWithDuplicates)).sort();
 }
 
@@ -85,12 +92,10 @@ export function awaitingGrades(): string[] {
  */
 export function formatterFor(style: 'short' | 'long'): (student: Student) => string {
   if (style === 'short') {
-    return (student) => student.name;
-  } else {
-    return (student) => {
-      return `${student.name} (${student.deptName}), ${student.totCred} credits`;
-    };
-  }
+    return (student) => student.name
+    }
+     return (student) => `${student.name} (${student.deptName}), ${student.totCred} credits`
+  
 }
 
 // --- A5. Changing nothing -------------------------------------------------
@@ -101,11 +106,10 @@ export function formatterFor(style: 'short' | 'long'): (student: Student) => str
  * at all: build new objects with the three dots.
  */
 export function raiseCredits(list: Student[], deptName: string, extra: number): Student[] {
-  const newList = list.map(student => {
-    if (student.deptName === deptName) {
+  return list.map((student) => {
+    if (student.deptName === deptName){
       return { ...student, totCred: student.totCred + extra }
     }
     return student
-  });
-  return newList;
+  })
 }
